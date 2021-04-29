@@ -41,16 +41,24 @@ def readOrderCreationFromHooks():
         data["address"] = shipping["address_1"]
         data["postalCode"] = shipping["postcode"]
         data["name"] = shipping["first_name"] + shipping["last_name"] 
-        data["product"] = ""
+
+        productsDetail = {}
+
+        data["product"] = []
 
         for line in jsonData["line_items"]:
-            data["product"] += line["name"]+" cantidad:"+str(line["quantity"]) 
+            productsDetail["name"] = line["name"]
+            productsDetail["quantity"] = str(line["quantity"]) 
+            productsDetail["product_id"] = str(line["product_id"]) 
+            productsDetail["variation_id"] = str(line["variation_id"])
+            productsDetail["price"] = str(line["price"])  
+            data["product"].append(productsDetail)
         
         data["shop"] = "testing Shop"
 
         print("data",data)
        
-        result = mongo.db.mitrovich_shippings.insert_one(data)
+        #result = mongo.db.mitrovich_shippings.insert_one(data)
 
         return jsonify({'message': 'order creation readed'}), 200
 

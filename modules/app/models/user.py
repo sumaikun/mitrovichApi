@@ -25,7 +25,16 @@ user_schema = {
         "role":{
             "type" : "string",
             "enum" : ["admin", "operator","customer"]
-        }
+        },
+        "customerKey": {
+            "type": "string",
+        },
+        "customerSecret": {
+            "type": "string",
+        },
+        "shopUrl": {
+            "type": "string",
+        },
 
     },
     "required": ["email", "name", "lastName", "role"],
