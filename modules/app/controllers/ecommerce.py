@@ -7,6 +7,7 @@ from modules.app import app, mongo, flask_bcrypt, jwt
 from bson.objectid import ObjectId
 from bson.json_util import dumps, loads
 import datetime
+from woocommerce import API
 
 @app.route('/readOrderCreationFromHooks', methods=['POST'])
 def readOrderCreationFromHooks():
@@ -34,16 +35,24 @@ def readOrderCreationFromHooks():
 
         #print("shopUrl",shopUrl)
 
-        shop = mongo.db.users.find_one({'shopUrl': shopUrl })
+        shop = mongo.db.users.find_one({ 'shopUrl': {'$regex':shopUrl} })
 
         #print("shop",shop)
 
         if shop is None:
             return jsonify({'message': 'customer is not store on db'}), 200
+
+        wcapi = API(
+            url=shopUrl,
+            consumer_key=shop["customerKey"],
+            consumer_secret=shop["customerSecret"],
+            timeout=50
+        )
         
         data["shop"] = shopUrl
 
         shipping = jsonData["shipping"]
+        billing = jsonData["billing"]
 
         data["createdAt"] = datetime.datetime.utcnow()
         data["shopDate"] = jsonData["date_created"]
@@ -51,10 +60,11 @@ def readOrderCreationFromHooks():
         data["country"] = shipping["country"]
         data["state"] = shipping["state"]
         data["city"] = shipping["city"]
-        data["address"] = shipping["address_1"]
+        data["address"] = [shipping["address_1"],shipping["address_2"]]
         data["postalCode"] = shipping["postcode"]
-        data["name"] = shipping["first_name"] + shipping["last_name"] 
-
+        data["name"] = shipping["first_name"] + " " + shipping["last_name"] 
+        data["email"] = billing["email"] 
+        data["phone"] = billing["phone"]
         productsDetail = {}
 
         data["product"] = []
@@ -63,15 +73,21 @@ def readOrderCreationFromHooks():
             productsDetail["name"] = line["name"]
             productsDetail["quantity"] = str(line["quantity"]) 
             productsDetail["product_id"] = str(line["product_id"]) 
+            ### get extra data from api
+            response = wcapi.get('products/'+str(line["product_id"]))
+            productApi = response.json()
+            productsDetail["permalink"] = productApi["permalink"]
+            productsDetail["dimensions"] = productApi["dimensions"]
+            productsDetail["weight"] = productApi["weight"]
             productsDetail["variation_id"] = str(line["variation_id"])
             productsDetail["price"] = str(line["price"])  
             data["product"].append(productsDetail)
         
        
 
-        print("data",data)
+        #print("data",data)
        
-        #result = mongo.db.mitrovich_shippings.insert_one(data)
+        mongo.db.mitrovich_shippings.insert_one(data)
 
         return jsonify({'message': 'order creation readed'}), 200
 
