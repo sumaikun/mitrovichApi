@@ -38,6 +38,7 @@ def users():
                 data['password'] = flask_bcrypt.generate_password_hash(
                     data['password'])
             data["createdAT"] = datetime.datetime.utcnow()
+            del data['_id']
             result = mongo.db.users.insert_one(data)
             return jsonify({'message': 'User created successfully!','info':{'_id':result.inserted_id}}), 200
         else:

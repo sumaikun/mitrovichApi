@@ -27,8 +27,21 @@ def readOrderCreationFromHooks():
             data["shippingMethod"] = shippingMethod
 
     if shippingMethod is None:
-         return jsonify({'message': 'mitrovich won´t send this shipping'}), 200
+        return jsonify({'message': 'mitrovich won´t send this shipping'}), 200
     else :
+
+        shopUrl = jsonData["_links"]["self"][0]["href"].split("wp-json")[0]
+
+        #print("shopUrl",shopUrl)
+
+        shop = mongo.db.users.find_one({'shopUrl': shopUrl })
+
+        #print("shop",shop)
+
+        if shop is None:
+            return jsonify({'message': 'customer is not store on db'}), 200
+        
+        data["shop"] = shopUrl
 
         shipping = jsonData["shipping"]
 
@@ -54,7 +67,7 @@ def readOrderCreationFromHooks():
             productsDetail["price"] = str(line["price"])  
             data["product"].append(productsDetail)
         
-        data["shop"] = "testing Shop"
+       
 
         print("data",data)
        
